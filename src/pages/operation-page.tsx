@@ -197,7 +197,7 @@ export function OperationPage() {
           )
         }
         breadcrumbItems={[
-          { label: 'Overview', to: homePath() },
+          { label: 'Home', to: homePath() },
           ...(binding ? [{ label: 'Address', to: addressPath(binding.protocolAddress) }] : []),
           { label: 'Operation' },
         ]}

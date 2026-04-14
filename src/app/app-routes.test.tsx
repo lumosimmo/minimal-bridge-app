@@ -296,6 +296,10 @@ describe('app routes', () => {
     expect(await screen.findByText('Bound protocol addresses')).toBeInTheDocument()
     expect(await screen.findByText('deposit:abc')).toBeInTheDocument()
     expect(await screen.findByText('1 signatures')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Address', current: 'page' })).toBeInTheDocument()
+    expect(screen.getByText('Bound protocol addresses').closest('[data-slot=\"card\"]')).toBeNull()
+    expect(screen.getByText('Operation history').closest('[data-slot=\"card\"]')).toBeNull()
   })
 
   it('shows empty state for an address with no data', async () => {

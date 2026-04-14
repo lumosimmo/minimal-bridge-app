@@ -29,7 +29,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
@@ -83,7 +82,7 @@ export function AddressPage() {
           />
         }
         breadcrumbItems={[
-          { label: 'Overview', to: homePath() },
+          { label: 'Home', to: homePath() },
           { label: 'Address' },
         ]}
         actions={
@@ -127,15 +126,12 @@ export function AddressPage() {
         </Alert>
       ) : null}
 
-      <Card className="rounded-lg border border-border bg-card shadow-none">
-        <CardHeader>
-          <CardTitle>Bound protocol addresses</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base leading-snug font-medium">Bound protocol addresses</h2>
           {destinationBindingsQuery.isLoading || protocolBindingQuery.isLoading || !hasBridgeApiConfig ? (
             <LoadingTable rows={4} />
           ) : bindings.length ? (
-            <ScrollArea className="max-h-44 rounded-lg border border-border/70">
+            <ScrollArea className="max-h-44 rounded-lg border border-border bg-card">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -191,18 +187,14 @@ export function AddressPage() {
               description="No bindings."
             />
           )}
-        </CardContent>
-      </Card>
+      </section>
 
-      <Card className="rounded-lg border border-border bg-card shadow-none">
-        <CardHeader>
-          <CardTitle>Operation history</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base leading-snug font-medium">Operation history</h2>
           {operationsQuery.isLoading || !hasBridgeApiConfig ? (
             <LoadingTable rows={6} />
           ) : operations.length ? (
-            <ScrollArea className="h-[32rem] rounded-lg border border-border/70">
+            <ScrollArea className="h-[32rem] rounded-lg border border-border bg-card">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -324,8 +316,7 @@ export function AddressPage() {
               description="No operations."
             />
           )}
-        </CardContent>
-      </Card>
+      </section>
     </div>
   )
 }

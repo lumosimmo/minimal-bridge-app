@@ -277,7 +277,7 @@ export function QuotePage() {
       <PageHeader
         title="Quote explorer"
         breadcrumbItems={[
-          { label: 'Overview', to: homePath() },
+          { label: 'Home', to: homePath() },
           { label: 'Quote' },
         ]}
         actions={
