@@ -1,23 +1,30 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCwIcon } from 'lucide-react'
 
-import { getBridgeApiBaseUrl, getDepositAddress, getRoutes } from '@/lib/bridge-api'
-import { formatAssetAmountLabel, formatCount, humanizeKey } from '@/lib/format'
+import {
+  getBridgeApiBaseUrl,
+  getDepositAddress,
+  getRoutes,
+  type BridgeRoute,
+} from '@/lib/bridge-api'
+import {
+  formatAssetAmountLabel,
+  formatCount,
+  formatRouteLabel,
+  humanizeKey,
+} from '@/lib/format'
 import {
   ApiConfigAlert,
   CardEmptyState,
   CopyableText,
   DetailList,
   LoadingCard,
-  PageHeader,
 } from '@/components/explorer/shared'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field'
@@ -46,7 +53,7 @@ export function OverviewPage() {
   const [routeId, setRouteId] = useState(defaultRouteId)
   const [destinationAddress, setDestinationAddress] = useState('')
   const [submitted, setSubmitted] = useState<{
-    routeId: string
+    route: BridgeRoute
     destinationAddress: string
   } | null>(null)
   const [error, setError] = useState('')
@@ -61,23 +68,31 @@ export function OverviewPage() {
     () => routes.find((route) => route.routeId === routeId) ?? routes[0],
     [routeId, routes]
   )
+  const routeItems = useMemo(
+    () =>
+      routes.map((route) => ({
+        value: route.routeId,
+        label: formatRouteLabel(route),
+      })),
+    [routes]
+  )
+  const submittedRoute = submitted?.route
 
   const generateQuery = useQuery({
     queryKey: [
       'gen',
-      submitted?.routeId ?? '',
+      submitted?.route.routeId ?? '',
       submitted?.destinationAddress ?? '',
     ],
     queryFn: () => {
-      const route = routes.find((item) => item.routeId === submitted?.routeId)
-      if (!route || !submitted) {
+      if (!submitted) {
         throw new Error('Select a supported route.')
       }
 
       return getDepositAddress({
-        sourceChain: route.sourceChain,
-        destinationChain: route.destinationChain,
-        asset: route.asset,
+        sourceChain: submitted.route.sourceChain,
+        destinationChain: submitted.route.destinationChain,
+        asset: submitted.route.asset,
         destinationAddress: submitted.destinationAddress,
       })
     },
@@ -86,22 +101,6 @@ export function OverviewPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        title="Generate Deposit Address"
-        actions={
-          <Button
-            variant="outline"
-            onClick={() => {
-              void routesQuery.refetch()
-            }}
-            disabled={!hasBridgeApiConfig || routesQuery.isFetching}
-          >
-            <RefreshCwIcon data-icon="inline-start" />
-            Refresh
-          </Button>
-        }
-      />
-
       {!hasBridgeApiConfig ? <ApiConfigAlert /> : null}
 
       {routesQuery.error ? (
@@ -118,10 +117,13 @@ export function OverviewPage() {
         </Alert>
       ) : null}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
+        <p className="px-4 py-2 text-center text-3xl font-semibold leading-tight tracking-tight text-foreground sm:px-6 sm:py-4 sm:text-4xl">
+          Start with a deposit address
+        </p>
         <Card className="rounded-lg border border-border bg-card shadow-none">
           <CardHeader>
-            <CardTitle>Request new deposit wallet</CardTitle>
+            <CardTitle>Get deposit wallet</CardTitle>
           </CardHeader>
           <CardContent>
             <form
@@ -129,7 +131,7 @@ export function OverviewPage() {
               onSubmit={(event) => {
                 event.preventDefault()
 
-                if (!routeId) {
+                if (!selectedRoute) {
                   setError('Select a route.')
                   return
                 }
@@ -141,7 +143,7 @@ export function OverviewPage() {
 
                 setError('')
                 setSubmitted({
-                  routeId,
+                  route: selectedRoute,
                   destinationAddress: destinationAddress.trim(),
                 })
               }}
@@ -150,6 +152,7 @@ export function OverviewPage() {
                 <Field>
                   <FieldLabel htmlFor={routeFieldId}>Route</FieldLabel>
                   <Select
+                    items={routeItems}
                     value={routeId}
                     onValueChange={(value) => {
                       if (!value) {
@@ -168,9 +171,7 @@ export function OverviewPage() {
                       <SelectGroup>
                         {routes.map((route) => (
                           <SelectItem key={route.routeId} value={route.routeId}>
-                            {humanizeKey(route.sourceChain)} to{' '}
-                            {humanizeKey(route.destinationChain)} ·{' '}
-                            {route.asset.toUpperCase()}
+                            {formatRouteLabel(route)}
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -186,16 +187,11 @@ export function OverviewPage() {
                     id="destination-address"
                     value={destinationAddress}
                     aria-invalid={error ? true : undefined}
-                    placeholder="0x... or destination wallet"
+                    placeholder="0x..."
                     onChange={(event) => {
                       setDestinationAddress(event.target.value)
                     }}
                   />
-                  <FieldDescription>
-                    {selectedRoute
-                      ? `Generate a ${humanizeKey(selectedRoute.sourceChain)} deposit address that bridges into ${humanizeKey(selectedRoute.destinationChain)} for this destination wallet.`
-                      : 'Load routes from the bridge API first.'}
-                  </FieldDescription>
                   {error ? <p className="text-sm text-destructive">{error}</p> : null}
                 </Field>
               </FieldGroup>
@@ -205,7 +201,7 @@ export function OverviewPage() {
                   type="submit"
                   disabled={!hasBridgeApiConfig || routesQuery.isLoading || generateQuery.isFetching}
                 >
-                  Generate
+                  Get Wallet
                 </Button>
                 <Button
                   type="button"
@@ -226,7 +222,7 @@ export function OverviewPage() {
 
         <Card className="rounded-lg border border-border bg-card shadow-none">
           <CardHeader>
-            <CardTitle>Generated deposit wallet</CardTitle>
+            <CardTitle>Deposit wallet</CardTitle>
           </CardHeader>
           <CardContent>
             {generateQuery.isLoading ? (
@@ -246,13 +242,15 @@ export function OverviewPage() {
                   { label: 'Status', value: humanizeKey(generateQuery.data.status) },
                   {
                     label: 'Route',
-                    value: generateQuery.data.route || selectedRoute?.routeId || 'Unavailable',
+                    value: submittedRoute
+                      ? formatRouteLabel(submittedRoute)
+                      : generateQuery.data.route || 'Unavailable',
                   },
                   {
                     label: 'Minimum amount',
                     value: formatAssetAmountLabel(
-                      generateQuery.data.minimumAmount ?? selectedRoute?.minimumAmount,
-                      selectedRoute?.sourceAsset
+                      generateQuery.data.minimumAmount ?? submittedRoute?.minimumAmount,
+                      submittedRoute?.sourceAsset
                     ),
                   },
                   {
@@ -264,7 +262,7 @@ export function OverviewPage() {
             ) : (
               <CardEmptyState
                 title="No deposit wallet generated"
-                description="Choose a route, enter a user address, and generate a deposit address."
+                description="Choose a route, enter a user address, and generate or look up a deposit address."
               />
             )}
           </CardContent>

@@ -195,6 +195,14 @@ export function humanizeKey(value: string) {
     .replace(/\b\w/g, (match) => match.toUpperCase())
 }
 
+export function formatRouteLabel(route: {
+  sourceChain: string
+  destinationChain: string
+  asset: string
+}) {
+  return `${humanizeKey(route.sourceChain)} to ${humanizeKey(route.destinationChain)} \u00b7 ${route.asset.toUpperCase()}`
+}
+
 export function humanizeState(value: string) {
   return humanizeKey(value)
 }

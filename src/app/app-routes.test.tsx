@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -211,11 +212,24 @@ describe('app routes', () => {
       throw new Error(`Unexpected url ${url}`)
     })
 
-    expect(await screen.findByText('Request new deposit wallet')).toBeInTheDocument()
-    expect(await screen.findByText('Generated deposit wallet')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Get deposit wallet')
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Deposit wallet')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Choose a route, enter a user address, and generate or look up a deposit address.'
+      )
+    ).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('0x...')).toBeInTheDocument()
+    const routeSelect = screen.getByRole('combobox', { name: 'Route' })
+    expect(routeSelect).toHaveTextContent('Ethereum to Hyperliquid · ETH')
+    expect(routeSelect).not.toHaveTextContent('ethereum-hyperliquid-eth')
   })
 
   it('generates a deposit address from the home page', async () => {
+    const user = userEvent.setup()
+
     renderRoute(['/' ], async (input) => {
       const url = input.toString()
       if (url.includes('/routes')) {
@@ -234,14 +248,33 @@ describe('app routes', () => {
       throw new Error(`Unexpected url ${url}`)
     })
 
-    await screen.findByText('Request new deposit wallet')
+    await screen.findByText('Get deposit wallet')
     fireEvent.change(screen.getByLabelText('User address'), {
       target: { value: '0xabc' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Get Wallet' }))
 
     expect(await screen.findByText('Deposit address')).toBeInTheDocument()
     expect(await screen.findByText('0x00000000000000000000000000000000000000bb')).toBeInTheDocument()
+    const depositWalletCard = screen
+      .getByText('Deposit wallet')
+      .closest('[data-slot="card"]')
+    expect(depositWalletCard).not.toBeNull()
+    expect(within(depositWalletCard as HTMLElement).getByText('Ethereum to Hyperliquid · ETH')).toBeInTheDocument()
+    expect(within(depositWalletCard as HTMLElement).getByText('0.001 ETH')).toBeInTheDocument()
+
+    const routeSelect = screen.getByRole('combobox', { name: 'Route' })
+    await user.click(routeSelect)
+    await user.click(
+      await screen.findByRole('option', { name: 'Hyperliquid to Ethereum · ETH' })
+    )
+
+    await waitFor(() => {
+      expect(routeSelect).toHaveTextContent('Hyperliquid to Ethereum · ETH')
+    })
+    expect(within(depositWalletCard as HTMLElement).getByText('Ethereum to Hyperliquid · ETH')).toBeInTheDocument()
+    expect(within(depositWalletCard as HTMLElement).getByText('0.001 ETH')).toBeInTheDocument()
+    expect(within(depositWalletCard as HTMLElement).queryByText('1,000,000 UETH')).not.toBeInTheDocument()
   })
 
   it('loads bindings and operations for an address route', async () => {
@@ -394,9 +427,10 @@ describe('app routes', () => {
     )
 
     expect(await screen.findByText('Connect the bridge API')).toBeInTheDocument()
-    expect(screen.getByText('Request new deposit wallet')).toBeInTheDocument()
-    expect(screen.getByText('Generated deposit wallet')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled()
+    expect(screen.getByText('Start with a deposit address')).toBeInTheDocument()
+    expect(screen.getByText('Get deposit wallet')).toBeInTheDocument()
+    expect(screen.getByText('Deposit wallet')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })
 

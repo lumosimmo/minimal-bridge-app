@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getBridgeApiBaseUrl, getQuote, getRoutes } from '@/lib/bridge-api'
 import {
   formatAssetAmountLabel,
+  formatRouteLabel,
   formatTimestamp,
   hasPositiveAmount,
   humanizeKey,
@@ -64,6 +65,14 @@ export function QuotePage() {
   )
   const [formState, setFormState] = useState(initialState)
   const [error, setError] = useState('')
+  const routeItems = useMemo(
+    () =>
+      routeOptions.map((route) => ({
+        value: route.routeId,
+        label: formatRouteLabel(route),
+      })),
+    [routeOptions]
+  )
 
   const selectedRoute = getRouteOption(routeOptions, initialState.routeId) ?? routeOptions[0]
   const formSelectedRoute = getRouteOption(routeOptions, formState.routeId) ?? routeOptions[0]
@@ -313,6 +322,7 @@ export function QuotePage() {
               <Field>
                 <FieldLabel htmlFor={routeFieldId}>Route</FieldLabel>
                 <Select
+                  items={routeItems}
                   value={formState.routeId}
                   onValueChange={(value) => {
                     if (!value) {
@@ -334,9 +344,7 @@ export function QuotePage() {
                     <SelectGroup>
                       {routeOptions.map((option) => (
                         <SelectItem key={option.routeId} value={option.routeId}>
-                          {humanizeKey(option.sourceChain)} to{' '}
-                          {humanizeKey(option.destinationChain)} ·{' '}
-                          {option.asset.toUpperCase()}
+                          {formatRouteLabel(option)}
                         </SelectItem>
                       ))}
                     </SelectGroup>
