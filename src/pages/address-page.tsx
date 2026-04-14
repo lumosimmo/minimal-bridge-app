@@ -310,22 +310,6 @@ export function AddressPage() {
                               formatHash(operation.destinationTxHash)
                             )}
                           </span>
-                          <span className="truncate text-muted-foreground">
-                            From{' '}
-                            <CopyableText
-                              value={operation.sourceAddress}
-                              display={formatHash(operation.sourceAddress)}
-                              label="Copy source address"
-                            />
-                          </span>
-                          <span className="truncate text-muted-foreground">
-                            To{' '}
-                            <CopyableText
-                              value={operation.destinationAddress}
-                              display={formatHash(operation.destinationAddress)}
-                              label="Copy destination address"
-                            />
-                          </span>
                         </div>
                       </TableCell>
                     </TableRow>
